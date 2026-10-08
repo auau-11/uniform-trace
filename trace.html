@@ -106,25 +106,33 @@
   .wash-icons {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    padding: 14px;
+    gap: 14px;
+    padding: 16px;
   }
   .wash-icon {
-    width: 44px;
+    width: 56px;
     text-align: center;
     font-size: 11px;
     color: #6b7a99;
+    line-height: 1.3;
   }
   .wash-icon .sym {
-    width: 36px; height: 36px;
-    border: 1.5px solid #1a2a44;
-    border-radius: 4px;
+    width: 44px; height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
     color: #1a2a44;
+  }
+  .wash-icon .sym svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .wash-icon .sym.missing {
+    border: 1.5px dashed #c62828;
+    color: #c62828;
+    font-size: 10px;
   }
 
   .footer {
@@ -158,6 +166,7 @@
 
 <div id="content"></div>
 
+<script src="wash-symbols.js"></script>
 <script>
   const params = new URLSearchParams(location.search);
   const batchId = params.get("b") || "2026Q4-001";
@@ -189,9 +198,20 @@
       </div>`;
       return;
     }
-    const washHTML = data.washInstruction.map(w =>
-      `<div class="wash-icon"><div class="sym">${w.sym}</div>${w.label}</div>`
-    ).join("");
+    const washHTML = (data.washInstruction || []).map(w => {
+      const code = w.code || w.sym;
+      const def = window.WASH_SYMBOLS && window.WASH_SYMBOLS[code];
+      const label = w.label || (def ? def.label : code);
+      const inner = def ? def.svg : `<div class="sym missing">${escapeHTML(code || "?")}</div>`;
+      const symWrap = def ? `<div class="sym">${def.svg}</div>` : inner;
+      return `<div class="wash-icon">${symWrap}${escapeHTML(label)}</div>`;
+    }).join("");
+
+    function escapeHTML(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
 
     root.innerHTML = `
       <div class="status-bar">批次信息已核验，数据由生产企业自主申报</div>

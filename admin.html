@@ -114,9 +114,9 @@
   }
   .wash-row {
     display: grid;
-    grid-template-columns: 60px 1fr auto;
+    grid-template-columns: 40px 1fr 1fr auto;
     gap: 8px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     align-items: center;
   }
   .wash-row input {
@@ -223,6 +223,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="wash-symbols.js"></script>
 <script>
 const FIELDS = [
   {group: "产品信息", items: [
@@ -263,11 +264,11 @@ const DEFAULT_DATA = {
     standard: "GB/T 31888-2015",
     otherStandard: "GB 31701-2015 婴幼儿及儿童纺织产品安全技术规范",
     washInstruction: [
-      {sym: "40", label: "40℃水洗"},
-      {sym: "⊝", label: "不可氯漂"},
-      {sym: "▽", label: "可翻转干燥"},
-      {sym: "⬜", label: "阴干"},
-      {sym: "⟐", label: "中温熨烫"}
+      {code: "wash40", label: "40℃水洗"},
+      {code: "noBleach", label: "不可氯漂"},
+      {code: "tumbleDry", label: "可翻转干燥"},
+      {code: "shadeDry", label: "阴干"},
+      {code: "iron2", label: "中温熨烫"}
     ],
     produceDate: "2026-09-15",
     batchNo: "2026Q4-001",
@@ -349,16 +350,36 @@ function renderWash() {
   const data = db[currentId];
   const list = document.getElementById("washList");
   list.innerHTML = "";
+  const symbolOptions = Object.entries(window.WASH_SYMBOLS || {})
+    .map(([code, def]) => `<option value="${code}">${def.label} (${code})</option>`)
+    .join("");
+
   (data.washInstruction || []).forEach((w, i) => {
+    const code = w.code || w.sym || "";
+    const def = window.WASH_SYMBOLS && window.WASH_SYMBOLS[code];
+    const previewSVG = def ? def.svg : `<span style="color:#c62828;font-size:10px;">?</span>`;
+
     const row = document.createElement("div");
     row.className = "wash-row";
     row.innerHTML = `
-      <input type="text" value="${escapeHTML(w.sym)}" placeholder="符号">
-      <input type="text" value="${escapeHTML(w.label)}" placeholder="说明">
+      <div style="width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;color:#1a2a44;">${previewSVG}</div>
+      <select style="padding:6px 8px;border:1px solid #d0d8e5;border-radius:3px;font-size:12px;font-family:inherit;width:100%;">
+        <option value="">-- 选择符号 --</option>
+        ${symbolOptions}
+      </select>
+      <input type="text" value="${escapeHTML(w.label || "")}" placeholder="说明文字">
       <button class="btn-danger" data-i="${i}">删</button>
     `;
-    const [symIn, labIn, delBtn] = row.children;
-    symIn.oninput = () => { data.washInstruction[i].sym = symIn.value; saveToStorage(); refreshPreview(); };
+    const [symBox, codeSel, labIn, delBtn] = row.children;
+    codeSel.value = code;
+
+    codeSel.onchange = () => {
+      data.washInstruction[i].code = codeSel.value;
+      if (window.WASH_SYMBOLS[codeSel.value] && !data.washInstruction[i].label) {
+        data.washInstruction[i].label = window.WASH_SYMBOLS[codeSel.value].label;
+      }
+      saveToStorage(); renderWash(); refreshPreview();
+    };
     labIn.oninput = () => { data.washInstruction[i].label = labIn.value; saveToStorage(); refreshPreview(); };
     delBtn.onclick = () => { data.washInstruction.splice(i, 1); saveToStorage(); renderWash(); refreshPreview(); };
     list.appendChild(row);
@@ -367,9 +388,10 @@ function renderWash() {
 
 function addWash() {
   if (!db[currentId].washInstruction) db[currentId].washInstruction = [];
-  db[currentId].washInstruction.push({sym: "", label: ""});
+  db[currentId].washInstruction.push({code: "", label: ""});
   saveToStorage();
   renderWash();
+  refreshPreview();
 }
 
 function addBatch() {

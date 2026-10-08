@@ -10,11 +10,11 @@
     "standard": "GB/T 31888-2015",
     "otherStandard": "GB 31701-2015 婴幼儿及儿童纺织产品安全技术规范",
     "washInstruction": [
-      {"sym": "40", "label": "40℃水洗"},
-      {"sym": "⊝", "label": "不可氯漂"},
-      {"sym": "▽", "label": "可翻转干燥"},
-      {"sym": "⬜", "label": "阴干"},
-      {"sym": "⟐", "label": "中温熨烫"}
+      {"code": "wash40", "label": "40℃水洗"},
+      {"code": "noBleach", "label": "不可氯漂"},
+      {"code": "tumbleDry", "label": "可翻转干燥"},
+      {"code": "shadeDry", "label": "阴干"},
+      {"code": "iron2", "label": "中温熨烫"}
     ],
     "produceDate": "2026-09-15",
     "batchNo": "2026Q4-001",
