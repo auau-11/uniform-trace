@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校服溯源信息管理</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f4f6f9;
+    color: #1a2a44;
+    padding: 24px;
+    font-size: 14px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  .top {
+    background: #1a3a7a;
+    color: #fff;
+    padding: 18px 24px;
+    border-radius: 8px 8px 0 0;
+  }
+  .top h1 { font-size: 18px; }
+  .top .sub { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+
+  .toolbar {
+    background: #fff;
+    padding: 12px 20px;
+    border-bottom: 1px solid #e0e5ed;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .toolbar select, .toolbar input {
+    padding: 8px 10px;
+    border: 1px solid #d0d8e5;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .toolbar label { font-size: 13px; color: #6b7a99; }
+
+  button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-primary { background: #2a5aad; color: #fff; }
+  .btn-primary:hover { background: #1a3a7a; }
+  .btn-success { background: #2e7d32; color: #fff; }
+  .btn-success:hover { background: #1b5e20; }
+  .btn-danger { background: #c62828; color: #fff; }
+  .btn-ghost { background: #f0f3f8; color: #1a3a7a; border: 1px solid #d0d8e5; }
+
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 0;
+    background: #fff;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+    min-height: 600px;
+  }
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; }
+    .preview { border-left: none !important; border-top: 1px solid #e0e5ed; }
+  }
+
+  .editor {
+    padding: 20px 24px;
+    overflow-y: auto;
+  }
+  .section-title {
+    font-size: 13px;
+    color: #1a3a7a;
+    font-weight: 600;
+    margin: 20px 0 10px;
+    padding-left: 10px;
+    border-left: 3px solid #2a5aad;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  .field {
+    margin-bottom: 12px;
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: #6b7a99;
+    margin-bottom: 4px;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #d0d8e5;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .field input:focus, .field textarea:focus {
+    outline: none;
+    border-color: #2a5aad;
+  }
+
+  .wash-list {
+    border: 1px solid #e0e5ed;
+    border-radius: 4px;
+    padding: 10px;
+  }
+  .wash-row {
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: center;
+  }
+  .wash-row input {
+    padding: 6px 8px;
+    border: 1px solid #d0d8e5;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: inherit;
+    width: 100%;
+  }
+  .wash-row button {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .preview {
+    border-left: 1px solid #e0e5ed;
+    background: #f4f6f9;
+    display: flex;
+    flex-direction: column;
+  }
+  .preview-head {
+    padding: 10px 16px;
+    background: #fafbfd;
+    border-bottom: 1px solid #e0e5ed;
+    font-size: 12px;
+    color: #6b7a99;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .preview iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #f4f6f9;
+  }
+
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #2e7d32;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; }
+  .toast.err { background: #c62828; }
+
+  .tip {
+    margin: 16px 20px 20px;
+    padding: 12px 14px;
+    background: #fff8e1;
+    border-left: 3px solid #f9a825;
+    font-size: 12px;
+    color: #6b4e00;
+    line-height: 1.7;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<div class="top">
+  <h1>校服溯源信息管理</h1>
+  <div class="sub">编辑批次数据 → 实时预览 → 下载 data.json 替换到服务器</div>
+</div>
+
+<div class="toolbar">
+  <label>当前批次</label>
+  <select id="batchSelect"></select>
+  <button class="btn-ghost" onclick="addBatch()">+ 新增批次</button>
+  <button class="btn-danger" onclick="delBatch()">删除当前</button>
+  <div style="flex:1"></div>
+  <button class="btn-ghost" onclick="loadFromFile()">导入 JSON</button>
+  <input type="file" id="fileInput" accept=".json" style="display:none">
+  <button class="btn-success" onclick="downloadJSON()">下载 data.json</button>
+</div>
+
+<div class="main">
+  <div class="editor" id="editor"></div>
+  <div class="preview">
+    <div class="preview-head">
+      <span>实时预览</span>
+      <button class="btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="refreshPreview()">刷新</button>
+    </div>
+    <iframe id="previewFrame"></iframe>
+  </div>
+</div>
+
+<div class="tip">
+  <strong>修改流程</strong>：编辑字段 → 右侧实时预览 → 点【下载 data.json】→ 用 FTP/宝塔面板把文件覆盖到服务器的网站根目录 → 用户下次扫码就能看到最新信息。<br>
+  <strong>数据保存在哪</strong>：浏览器 localStorage（本机），下载 JSON 才是真正发布。换电脑请先用【导入 JSON】加载当前线上的 data.json。
+</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const FIELDS = [
+  {group: "产品信息", items: [
+    {k: "productName", label: "产品名称"},
+    {k: "brand", label: "品牌"},
+    {k: "style", label: "款号"},
+    {k: "spec", label: "规格型号"},
+    {k: "color", label: "颜色"}
+  ]},
+  {group: "技术指标", items: [
+    {k: "fabric", label: "纤维成分", type: "textarea"},
+    {k: "safetyClass", label: "安全类别（A/B/C）"},
+    {k: "standard", label: "执行标准"},
+    {k: "otherStandard", label: "安全标准", type: "textarea"}
+  ]},
+  {group: "批次信息", items: [
+    {k: "batchNo", label: "批次号"},
+    {k: "produceDate", label: "生产日期"},
+    {k: "qty", label: "批次数量"}
+  ]},
+  {group: "生产企业", items: [
+    {k: "factoryName", label: "企业名称"},
+    {k: "factoryCode", label: "统一社会信用代码"},
+    {k: "factoryAddr", label: "生产地址", type: "textarea"},
+    {k: "factoryTel", label: "联系电话"}
+  ]}
+];
+
+const DEFAULT_DATA = {
+  "2026Q4-001": {
+    productName: "中小学生夏季短袖套装",
+    brand: "XX 校服",
+    style: "XF-2026-S01",
+    spec: "160/80A",
+    color: "藏青 / 白",
+    fabric: "面料：涤纶 65% 棉 35%  里料：100% 棉",
+    safetyClass: "B",
+    standard: "GB/T 31888-2015",
+    otherStandard: "GB 31701-2015 婴幼儿及儿童纺织产品安全技术规范",
+    washInstruction: [
+      {sym: "40", label: "40℃水洗"},
+      {sym: "⊝", label: "不可氯漂"},
+      {sym: "▽", label: "可翻转干燥"},
+      {sym: "⬜", label: "阴干"},
+      {sym: "⟐", label: "中温熨烫"}
+    ],
+    produceDate: "2026-09-15",
+    batchNo: "2026Q4-001",
+    qty: "1,200 件",
+    factoryName: "XX 服饰制造有限公司",
+    factoryCode: "91330100MA2XXXXXXX",
+    factoryAddr: "浙江省杭州市萧山区XX路XX号",
+    factoryTel: "0571-8888XXXX"
+  }
+};
+
+const STORAGE_KEY = "uniform-trace-data";
+let db = loadFromStorage();
+let currentId = Object.keys(db)[0];
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+
+function saveToStorage() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+}
+
+function toast(msg, isErr) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (isErr ? " err" : "");
+  setTimeout(() => t.className = "toast", 2000);
+}
+
+function renderBatchSelect() {
+  const sel = document.getElementById("batchSelect");
+  sel.innerHTML = "";
+  Object.keys(db).forEach(id => {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = id;
+    if (id === currentId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.onchange = () => { currentId = sel.value; renderEditor(); refreshPreview(); };
+}
+
+function renderEditor() {
+  const data = db[currentId];
+  if (!data) { document.getElementById("editor").innerHTML = ""; return; }
+  const container = document.getElementById("editor");
+  let html = "";
+  FIELDS.forEach(group => {
+    html += `<div class="section-title">${group.group}</div>`;
+    group.items.forEach(f => {
+      const val = data[f.k] || "";
+      const input = f.type === "textarea"
+        ? `<textarea rows="2" data-key="${f.k}">${escapeHTML(val)}</textarea>`
+        : `<input type="text" data-key="${f.k}" value="${escapeHTML(val)}">`;
+      html += `<div class="field"><label>${f.label}</label>${input}</div>`;
+    });
+  });
+  html += `<div class="section-title">洗涤说明</div>`;
+  html += `<div class="wash-list" id="washList"></div>`;
+  html += `<button class="btn-ghost" style="margin-top:8px;" onclick="addWash()">+ 添加洗涤项</button>`;
+  container.innerHTML = html;
+
+  container.querySelectorAll("[data-key]").forEach(el => {
+    el.addEventListener("input", () => {
+      db[currentId][el.dataset.key] = el.value;
+      saveToStorage();
+      refreshPreview();
+    });
+  });
+  renderWash();
+}
+
+function renderWash() {
+  const data = db[currentId];
+  const list = document.getElementById("washList");
+  list.innerHTML = "";
+  (data.washInstruction || []).forEach((w, i) => {
+    const row = document.createElement("div");
+    row.className = "wash-row";
+    row.innerHTML = `
+      <input type="text" value="${escapeHTML(w.sym)}" placeholder="符号">
+      <input type="text" value="${escapeHTML(w.label)}" placeholder="说明">
+      <button class="btn-danger" data-i="${i}">删</button>
+    `;
+    const [symIn, labIn, delBtn] = row.children;
+    symIn.oninput = () => { data.washInstruction[i].sym = symIn.value; saveToStorage(); refreshPreview(); };
+    labIn.oninput = () => { data.washInstruction[i].label = labIn.value; saveToStorage(); refreshPreview(); };
+    delBtn.onclick = () => { data.washInstruction.splice(i, 1); saveToStorage(); renderWash(); refreshPreview(); };
+    list.appendChild(row);
+  });
+}
+
+function addWash() {
+  if (!db[currentId].washInstruction) db[currentId].washInstruction = [];
+  db[currentId].washInstruction.push({sym: "", label: ""});
+  saveToStorage();
+  renderWash();
+}
+
+function addBatch() {
+  const id = prompt("输入新批次号（如 2026Q4-002）");
+  if (!id) return;
+  if (db[id]) { toast("批次号已存在", true); return; }
+  db[id] = JSON.parse(JSON.stringify(db[currentId] || Object.values(DEFAULT_DATA)[0]));
+  db[id].batchNo = id;
+  currentId = id;
+  saveToStorage();
+  renderBatchSelect();
+  renderEditor();
+  refreshPreview();
+}
+
+function delBatch() {
+  if (Object.keys(db).length <= 1) { toast("至少保留一个批次", true); return; }
+  if (!confirm(`确认删除批次 ${currentId}？`)) return;
+  delete db[currentId];
+  currentId = Object.keys(db)[0];
+  saveToStorage();
+  renderBatchSelect();
+  renderEditor();
+  refreshPreview();
+}
+
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], {type: "application/json"});
+  const link = document.createElement("a");
+  link.download = "data.json";
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  toast("已下载 data.json，请覆盖到服务器");
+}
+
+function loadFromFile() {
+  document.getElementById("fileInput").click();
+}
+document.getElementById("fileInput").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      db = JSON.parse(ev.target.result);
+      currentId = Object.keys(db)[0];
+      saveToStorage();
+      renderBatchSelect();
+      renderEditor();
+      refreshPreview();
+      toast("导入成功");
+    } catch(err) { toast("JSON 格式错误", true); }
+  };
+  reader.readAsText(f);
+});
+
+function refreshPreview() {
+  const frame = document.getElementById("previewFrame");
+  // 用 postMessage 把数据推到 iframe，trace.html 支持兜底读取
+  frame.src = "trace.html?b=" + encodeURIComponent(currentId) + "&_preview=" + Date.now();
+  frame.onload = () => {
+    frame.contentWindow.postMessage({type: "preview-data", db: db, batchId: currentId}, "*");
+  };
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+renderBatchSelect();
+renderEditor();
+refreshPreview();
+</script>
+
+</body>
+</html>

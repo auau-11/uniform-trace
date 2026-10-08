@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校服溯源码生成器</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f4f6f9;
+    padding: 30px 20px;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 520px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+    padding: 28px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  h1 {
+    color: #1a3a7a;
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+  .sub {
+    color: #6b7a99;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .form-row {
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: #1a2a44;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d0d8e5;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  input:focus {
+    outline: none;
+    border-color: #2a5aad;
+  }
+  button {
+    width: 100%;
+    padding: 12px;
+    background: #2a5aad;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  button:hover { background: #1a3a7a; }
+
+  .result {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px dashed #d0d8e5;
+    text-align: center;
+    display: none;
+  }
+  .result.show { display: block; }
+
+  #qrcode {
+    display: inline-block;
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #e0e5ed;
+    border-radius: 6px;
+  }
+  .batch-tag {
+    margin-top: 12px;
+    font-family: Menlo, Consolas, monospace;
+    font-size: 13px;
+    color: #1a2a44;
+    font-weight: 600;
+  }
+  .url-box {
+    margin-top: 12px;
+    padding: 10px;
+    background: #f4f6f9;
+    border-radius: 4px;
+    font-family: Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #6b7a99;
+    word-break: break-all;
+  }
+  .tip {
+    margin-top: 20px;
+    padding: 12px;
+    background: #fff8e1;
+    border-left: 3px solid #f9a825;
+    font-size: 12px;
+    color: #6b4e00;
+    line-height: 1.6;
+    text-align: left;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>校服溯源码生成</h1>
+  <div class="sub">生成一批一码，交付水洗标厂印制</div>
+
+  <div class="form-row">
+    <label>溯源页地址（部署后的域名）</label>
+    <input type="text" id="baseUrl" value="https://trace.example.cn/t.html" placeholder="https://your-domain.cn/trace.html">
+  </div>
+
+  <div class="form-row">
+    <label>批次号</label>
+    <input type="text" id="batchId" value="2026Q4-001" placeholder="如 2026Q4-001">
+  </div>
+
+  <button onclick="genQR()">生成二维码</button>
+
+  <div class="result" id="result">
+    <div id="qrcode"></div>
+    <div class="batch-tag" id="batchTag"></div>
+    <div class="url-box" id="urlBox"></div>
+    <button onclick="downloadQR()" style="margin-top:16px;background:#2e7d32;">下载 PNG（交付水洗标厂）</button>
+  </div>
+
+  <div class="tip">
+    <strong>使用说明</strong><br>
+    1. 本地双击 trace.html 可预览溯源页效果<br>
+    2. 部署到带 HTTPS 的域名后，把上方地址改为真实域名<br>
+    3. 生成二维码下载 PNG，交付水洗标厂丝印到洗水唛<br>
+    4. 同一批次所有校服共用一个码，无需可变数据印刷
+  </div>
+</div>
+
+<script>
+  let qrInstance = null;
+
+  function genQR() {
+    const base = document.getElementById("baseUrl").value.trim();
+    const batch = document.getElementById("batchId").value.trim();
+    if (!base || !batch) { alert("请填写完整"); return; }
+
+    const url = base + "?b=" + encodeURIComponent(batch);
+
+    const qrDiv = document.getElementById("qrcode");
+    qrDiv.innerHTML = "";
+    qrInstance = new QRCode(qrDiv, {
+      text: url,
+      width: 220,
+      height: 220,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    document.getElementById("batchTag").textContent = "批次号：" + batch;
+    document.getElementById("urlBox").textContent = url;
+    document.getElementById("result").classList.add("show");
+  }
+
+  function downloadQR() {
+    const img = document.querySelector("#qrcode img") || document.querySelector("#qrcode canvas");
+    if (!img) return;
+
+    const batch = document.getElementById("batchId").value.trim();
+    const canvas = img.tagName === "CANVAS" ? img : (() => {
+      const c = document.createElement("canvas");
+      c.width = img.width; c.height = img.height;
+      c.getContext("2d").drawImage(img, 0, 0);
+      return c;
+    })();
+
+    const link = document.createElement("a");
+    link.download = `qrcode-${batch}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+
+  // 默认生成一次
+  window.addEventListener("load", genQR);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "2026Q4-001": {
+    "productName": "中小学生夏季短袖套装",
+    "brand": "XX 校服",
+    "style": "XF-2026-S01",
+    "spec": "160/80A",
+    "color": "藏青 / 白",
+    "fabric": "面料：涤纶 65% 棉 35%  里料：100% 棉",
+    "safetyClass": "B",
+    "standard": "GB/T 31888-2015",
+    "otherStandard": "GB 31701-2015 婴幼儿及儿童纺织产品安全技术规范",
+    "washInstruction": [
+      {"sym": "40", "label": "40℃水洗"},
+      {"sym": "⊝", "label": "不可氯漂"},
+      {"sym": "▽", "label": "可翻转干燥"},
+      {"sym": "⬜", "label": "阴干"},
+      {"sym": "⟐", "label": "中温熨烫"}
+    ],
+    "produceDate": "2026-09-15",
+    "batchNo": "2026Q4-001",
+    "qty": "1,200 件",
+    "factoryName": "XX 服饰制造有限公司",
+    "factoryCode": "91330100MA2XXXXXXX",
+    "factoryAddr": "浙江省杭州市萧山区XX路XX号",
+    "factoryTel": "0571-8888XXXX"
+  }
+}

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>产品质量追溯查询</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #f4f6f9;
+    color: #1a2a44;
+    font-size: 15px;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a3a7a 0%, #2a5aad 100%);
+    color: #fff;
+    padding: 24px 20px 20px;
+    text-align: center;
+  }
+  .header .logo {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    font-size: 22px;
+  }
+  .header h1 { font-size: 18px; font-weight: 600; letter-spacing: 1px; }
+  .header .sub { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+
+  .status-bar {
+    background: #e8f5e9;
+    border-left: 3px solid #2e7d32;
+    margin: 16px 12px 0;
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #1b5e20;
+    display: flex;
+    align-items: center;
+  }
+  .status-bar::before {
+    content: "✓";
+    display: inline-block;
+    width: 18px; height: 18px;
+    background: #2e7d32;
+    color: #fff;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 18px;
+    font-size: 12px;
+    margin-right: 8px;
+  }
+
+  .card {
+    background: #fff;
+    margin: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .card-title {
+    background: #f0f3f8;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a3a7a;
+    border-left: 3px solid #2a5aad;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: top;
+  }
+  table td:first-child {
+    color: #6b7a99;
+    width: 38%;
+    background: #fafbfd;
+  }
+  table td:last-child {
+    color: #1a2a44;
+    font-weight: 500;
+  }
+  table tr:last-child td { border-bottom: none; }
+
+  .safety-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #2e7d32;
+    color: #fff;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .wash-icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px;
+  }
+  .wash-icon {
+    width: 44px;
+    text-align: center;
+    font-size: 11px;
+    color: #6b7a99;
+  }
+  .wash-icon .sym {
+    width: 36px; height: 36px;
+    border: 1.5px solid #1a2a44;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    margin-bottom: 2px;
+    color: #1a2a44;
+  }
+
+  .footer {
+    text-align: center;
+    color: #8a95ab;
+    font-size: 11px;
+    margin-top: 20px;
+    padding: 0 20px;
+    line-height: 1.8;
+  }
+  .footer .divider {
+    width: 40px;
+    height: 1px;
+    background: #d0d8e5;
+    margin: 10px auto;
+  }
+  .error {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7a99;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">校</div>
+  <h1>产品质量追溯查询系统</h1>
+  <div class="sub">Product Quality Traceability System</div>
+</div>
+
+<div id="content"></div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const batchId = params.get("b") || "2026Q4-001";
+  const isPreview = params.has("_preview");
+  const root = document.getElementById("content");
+
+  // 预览模式：等待 admin 页面通过 postMessage 推数据
+  if (isPreview) {
+    window.addEventListener("message", e => {
+      if (e.data && e.data.type === "preview-data") {
+        render(e.data.db[e.data.batchId]);
+      }
+    });
+  } else {
+    // 正常模式：从 data.json 加载
+    fetch("data.json?t=" + Date.now())
+      .then(r => r.json())
+      .then(BATCH_DB => render(BATCH_DB[batchId]))
+      .catch(() => {
+        root.innerHTML = `<div class="error"><h3>数据加载失败</h3></div>`;
+      });
+  }
+
+  function render(data) {
+    if (!data) {
+      root.innerHTML = `<div class="error">
+        <h3>未查询到该批次信息</h3>
+        <p style="margin-top:10px;font-size:13px;">批次号：${batchId}</p>
+      </div>`;
+      return;
+    }
+    const washHTML = data.washInstruction.map(w =>
+      `<div class="wash-icon"><div class="sym">${w.sym}</div>${w.label}</div>`
+    ).join("");
+
+    root.innerHTML = `
+      <div class="status-bar">批次信息已核验，数据由生产企业自主申报</div>
+
+      <div class="card">
+        <div class="card-title">产品信息</div>
+        <table>
+          <tr><td>产品名称</td><td>${data.productName}</td></tr>
+          <tr><td>品牌</td><td>${data.brand}</td></tr>
+          <tr><td>款号</td><td>${data.style}</td></tr>
+          <tr><td>规格型号</td><td>${data.spec}</td></tr>
+          <tr><td>颜色</td><td>${data.color}</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">技术指标</div>
+        <table>
+          <tr><td>纤维成分</td><td>${data.fabric}</td></tr>
+          <tr><td>安全类别</td><td><span class="safety-tag">${data.safetyClass} 类</span></td></tr>
+          <tr><td>执行标准</td><td>${data.standard}</td></tr>
+          <tr><td>安全标准</td><td>${data.otherStandard}</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">洗涤说明</div>
+        <div class="wash-icons">${washHTML}</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">批次信息</div>
+        <table>
+          <tr><td>批次号</td><td>${data.batchNo}</td></tr>
+          <tr><td>生产日期</td><td>${data.produceDate}</td></tr>
+          <tr><td>批次数量</td><td>${data.qty}</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">生产企业</div>
+        <table>
+          <tr><td>企业名称</td><td>${data.factoryName}</td></tr>
+          <tr><td>统一社会信用代码</td><td style="font-family:Menlo,Consolas,monospace;font-size:13px;">${data.factoryCode}</td></tr>
+          <tr><td>生产地址</td><td>${data.factoryAddr}</td></tr>
+          <tr><td>联系电话</td><td>${data.factoryTel}</td></tr>
+        </table>
+      </div>
+
+      <div class="footer">
+        本页面由生产企业自主申报并维护
+        <div class="divider"></div>
+        执行标准 GB/T 31888-2015《中小学生校服》
+      </div>
+    `;
+  }
+</script>
+
+</body>
+</html>
